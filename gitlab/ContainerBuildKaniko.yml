@@ -1,0 +1,42 @@
+
+.BuildImageWithKaniko: &BuildImageWithKaniko
+
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [ "" ]
+  
+  variables:
+    TAG_COMMIT_ENABLE: true
+    TAG_COMMIT_PREFIX: "commit-"
+    TAG_REF_SLUG_ENABLE: true
+    DOCKERFILE: "$CI_PROJECT_DIR/Dockerfile"
+    CONTEXT_DIR: "$CI_PROJECT_DIR"
+    ADDITIONAL_REGISTRY_DESTINATIONS: ""
+
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+
+  script:
+    - IMAGE_DESTS=""
+
+    # default tag based on commit
+    - |
+      if [[ $IMAGE_COMMIT_ENABLE ]]; then
+        IMAGE_DESTS="--destination $CI_REGISTRY_IMAGE:$IMAGE_COMMIT_PREFIX-$CI_COMMIT_SHA"
+      fi
+
+    # add tag for reference if available
+    - |
+      if [[ $IMAGE_REF_SLUG_ENABLE ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+      fi
+
+    # build image
+    - |
+      /kaniko/executor \
+        --context $CONTEXT_DIR \
+        --dockerfile $DOCKERFILE \
+        --single-snapshot \
+        $IMAGE_DESTS \
+        $ADDITIONAL_REGISTRY_DESTINATIONS
