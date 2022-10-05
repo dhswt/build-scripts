@@ -74,3 +74,38 @@ helm-release:
   # - tags
 
 ```
+
+## Golang
+
+Add to .gitlab-ci.yml
+
+```yaml
+
+include:
+  - remote: 'https://raw.githubusercontent.com/dhswt/build-scripts/master/gitlab/GoBuild.yml'
+
+build:
+  extends: .GoBuild
+
+# overwrite to change default variables below
+#  variables:
+#    BINARY_NAME: "$CI_PROJECT_NAME"
+#    BINARY_DIR: "$CI_PROJECT_DIR/dist"
+#
+#    EXTRA_GO_BUILD_ARGS: ""
+#    EXTRA_LD_FLAGS: ""
+#    LD_FLAGS: "-s -w"
+#    USE_UPX: "true"
+#
+#    GO_VERSION_VARIABLE: "" # package.variable to set to CI_COMMIT_REF_NAME
+#    GO_VERSION_INFO_VARIABLE: "" # package.variable to set to additional data about release
+#
+#    PACKAGE_COMMIT_ENABLE: "true"
+#    PACKAGE_COMMIT_PREFIX: "commit-"
+#
+#    PACKAGE_REF_SLUG_ENABLE: "true"
+#
+#    RUN_BINARY: "false"
+#    RUN_BINARY_WITH_ARGUMENTS: ""
+
+```
