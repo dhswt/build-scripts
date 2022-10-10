@@ -6,6 +6,7 @@
     entrypoint: [ "" ]
   
   variables:
+    KANIKO_ARGS: ""
     TAG_COMMIT_ENABLE: "true"
     TAG_COMMIT_PREFIX: "commit-"
     TAG_REF_SLUG_ENABLE: "true"
@@ -36,12 +37,20 @@
       if [[ "$TAG_REF_SLUG_ENABLE" == "true" ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
         IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
       fi
+    
+    - |
+      if [[ -z "$KANIKO_ARGS" ]]; then
+        KANIKO_ARGS=""
+      fi
+      KANIKO_ARGS="$KANIKO_ARGS --context $CONTEXT_DIR --dockerfile $DOCKERFILE"
+
+      if [[ "KANIKO_SINGLE_SNAPSHOT" ]]; then
+        KANIKO_ARGS="$KANIKO_ARGS --single-snapshot"
+      fi
 
     # build image
     - |
-      /kaniko/executor \
-        --context $CONTEXT_DIR \
-        --dockerfile $DOCKERFILE \
-        --single-snapshot \
-        $IMAGE_DESTS \
-        $ADDITIONAL_REGISTRY_DESTINATIONS
+      echo "kaniko args: $KANIKO_ARGS"
+      echo "pushing to destinations: $IMAGE_DESTS"
+      echo "pushing to additional destinations: $ADDITIONAL_REGISTRY_DESTINATIONS"
+      /kaniko/executor $KANIKO_ARGS $IMAGE_DESTS $ADDITIONAL_REGISTRY_DESTINATIONS
