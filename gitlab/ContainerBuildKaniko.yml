@@ -27,13 +27,13 @@
 
     # default tag based on commit
     - |
-      if [[ "$IMAGE_COMMIT_ENABLE" == "true" ]]; then
-        IMAGE_DESTS="--destination $CI_REGISTRY_IMAGE:$IMAGE_COMMIT_PREFIX-$CI_COMMIT_SHA"
+      if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_COMMIT_PREFIX-$CI_COMMIT_SHA"
       fi
 
     # add tag for reference if available
     - |
-      if [[ "$IMAGE_REF_SLUG_ENABLE" == "true" ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
+      if [[ "$TAG_REF_SLUG_ENABLE" == "true" ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
         IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
       fi
 
