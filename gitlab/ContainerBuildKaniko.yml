@@ -29,7 +29,7 @@
     # default tag based on commit
     - |
       if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_COMMIT_PREFIX-$CI_COMMIT_SHA"
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:${TAG_COMMIT_PREFIX}${CI_COMMIT_SHA}"
       fi
 
     # add tag for reference if available using slug
