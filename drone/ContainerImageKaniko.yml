@@ -43,15 +43,15 @@
     # add semver major.minor.patch tag  if enabled and available, exclude "0.0.0" tag
     - |
       if [[ "$TAG_SEMVER_MAJOR" == "true" ]] && [[ ! -z $SEMVER_MAJOR ]] && [[ "$SEMVER_MAJOR" != "0" ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR"
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$SEMVER_MAJOR"
         TAG_REF_NORMALIZED_ENABLE=0
       fi
       if [[ "$TAG_SEMVER_MINOR" == "true" ]] && [[ ! -z $SEMVER_MINOR ]] && [[ "$SEMVER_MAJOR_MINOR" != "0.0" ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR_MINOR"
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$SEMVER_MAJOR_MINOR"
         TAG_REF_NORMALIZED_ENABLE=0
       fi
       if [[ "$TAG_SEMVER_PATCH" == "true" ]] && [[ ! -z $SEMVER_PATCH ]] && [[ "$SEMVER_MAJOR_MINOR_PATCH" != "0.0.0" ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR_MINOR_PATCH"
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$SEMVER_MAJOR_MINOR_PATCH"
         TAG_REF_NORMALIZED_ENABLE=0
       fi
 
