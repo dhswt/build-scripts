@@ -1,9 +1,11 @@
-.BuildImageWithKaniko: &BuildImageWithKaniko
-  name: BuildImageWithKaniko
+.ContainerImageKaniko: &ContainerImageKaniko
+  name: ContainerImageKaniko
   image: gcr.io/kaniko-project/executor:debug
   
   environment:
     KANIKO_ARGS: ""
+    TAG_PREFIX: ""
+    TAG_SUFFIX: ""
     TAG_COMMIT_ENABLE: "true"
     TAG_COMMIT_PREFIX: "commit-"
     TAG_REF_SLUG_ENABLE: "false"
@@ -29,20 +31,19 @@
     # default tag based on commit
     - |
       if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_COMMIT_PREFIX$CI_COMMIT_SHA"
-      fi
-
-    # add tag for reference if available using slug
-    - |
-      if [[ "$TAG_REF_SLUG_ENABLE" == "true" ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$TAG_COMMIT_PREFIX$CI_COMMIT_SHA$TAG_SUFFIX"
       fi
 
     # add tag for reference if available using normalization
+    # - attempt to build tag first
+    # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
     - |
-      if [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ ! -z $CI_COMMIT_REF_NAME ]]; then
-        REF_TAG_NORMALIZED=$(echo $CI_COMMIT_REF_NAME | sed s:/:-:g)
-        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$REF_TAG_NORMALIZED"
+      if [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
+        REF_TAG_NORMALIZED=$(echo $DRONE_TAG | sed s:/:-:g)
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
+      elif [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ -z "$DRONE_PULL_REQUEST" ]] && [[ ! -z $DRONE_BRANCH ]]; then
+        REF_TAG_NORMALIZED=$(echo $DRONE_BRANCH | sed s:/:-:g)
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
       fi
     
     - |
