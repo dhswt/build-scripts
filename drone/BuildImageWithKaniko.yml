@@ -16,8 +16,6 @@
     - |
       export CONTEXT_DIR="${CONTEXT_DIR:-$DRONE_WORKSPACE_BASE}"
       export DOCKERFILE="${DOCKERFILE:-$DRONE_WORKSPACE_BASE/Dockerfile}"
-    
-    - env
 
     # add gitlab registry auth
     - |
@@ -25,7 +23,6 @@
         mkdir -p /kaniko/.docker
         echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}" > /kaniko/.docker/config.json
       fi
-      cat /kaniko/.docker/config.json
 
     - IMAGE_DESTS=""
 
