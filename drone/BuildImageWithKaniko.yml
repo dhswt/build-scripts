@@ -1,4 +1,3 @@
-
 .BuildImageWithKaniko: &BuildImageWithKaniko
   name: BuildImageWithKaniko
   image: gcr.io/kaniko-project/executor:debug
@@ -9,18 +8,24 @@
     TAG_COMMIT_PREFIX: "commit-"
     TAG_REF_SLUG_ENABLE: "false"
     TAG_REF_NORMALIZED_ENABLE: "true"
-    DOCKERFILE: "$DRONE_WORKSPACE_BASE/Dockerfile"
-    CONTEXT_DIR: "$DRONE_WORKSPACE_BASE"
     ADDITIONAL_REGISTRY_DESTINATIONS: ""
     ADD_CI_REGISTRY_AUTH: "true"
 
   commands:
+    # drone does not support expanding vars in environment values, set defaults via bash
+    - |
+      export CONTEXT_DIR="${CONTEXT_DIR:-$DRONE_WORKSPACE_BASE}"
+      export DOCKERFILE="${DOCKERFILE:-$DRONE_WORKSPACE_BASE/Dockerfile}"
+    
+    - env
+
     # add gitlab registry auth
     - |
       if [[ "$ADD_CI_REGISTRY_AUTH" == "true" ]]; then
         mkdir -p /kaniko/.docker
-        echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n $CI_REGISTRY_USER:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+        echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}" > /kaniko/.docker/config.json
       fi
+      cat /kaniko/.docker/config.json
 
     - IMAGE_DESTS=""
 
