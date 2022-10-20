@@ -9,15 +9,15 @@
     TAG_COMMIT_PREFIX: "commit-"
     TAG_REF_SLUG_ENABLE: "false"
     TAG_REF_NORMALIZED_ENABLE: "true"
-    DOCKERFILE: "$CI_PROJECT_DIR/Dockerfile"
-    CONTEXT_DIR: "$CI_PROJECT_DIR"
+    DOCKERFILE: "$DRONE_WORKSPACE_BASE/Dockerfile"
+    CONTEXT_DIR: "$DRONE_WORKSPACE_BASE"
     ADDITIONAL_REGISTRY_DESTINATIONS: ""
-    ADD_GITEA_REGISTRY_AUTH: "true"
+    ADD_CI_REGISTRY_AUTH: "true"
 
   commands:
     # add gitlab registry auth
     - |
-      if [[ "$ADD_GITEA_REGISTRY_AUTH" == "true" ]]; then
+      if [[ "$ADD_CI_REGISTRY_AUTH" == "true" ]]; then
         mkdir -p /kaniko/.docker
         echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n $CI_REGISTRY_USER:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
       fi
