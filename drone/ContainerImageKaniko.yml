@@ -1,3 +1,4 @@
+
 .ContainerImageKaniko: &ContainerImageKaniko
   name: ContainerImageKaniko
   image: gcr.io/kaniko-project/executor:debug
@@ -10,6 +11,9 @@
     TAG_COMMIT_PREFIX: "commit-"
     TAG_REF_SLUG_ENABLE: "false"
     TAG_REF_NORMALIZED_ENABLE: "true"
+    TAG_SEMVER_MAJOR: "true"
+    TAG_SEMVER_MINOR: "true"
+    TAG_SEMVER_PATCH: "true"
     ADDITIONAL_REGISTRY_DESTINATIONS: ""
     ADD_CI_REGISTRY_AUTH: "true"
 
@@ -34,10 +38,29 @@
         IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$TAG_COMMIT_PREFIX$CI_COMMIT_SHA$TAG_SUFFIX"
       fi
 
+    # add semver major tag              if enabled and available, exclude "0"     tag
+    # add semver major.minor tag        if enabled and available, exclude "0.0"   tag
+    # add semver major.minor.patch tag  if enabled and available, exclude "0.0.0" tag
+    - |
+      if [[ "$TAG_SEMVER_MAJOR" == "true" ]] && [[ ! -z $SEMVER_MAJOR ]] && [[ "$SEMVER_MAJOR" != "0" ]]; then
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+      if [[ "$TAG_SEMVER_MINOR" == "true" ]] && [[ ! -z $SEMVER_MINOR ]] && [[ "$SEMVER_MAJOR_MINOR" != "0.0" ]]; then
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR_MINOR"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+      if [[ "$TAG_SEMVER_PATCH" == "true" ]] && [[ ! -z $SEMVER_PATCH ]] && [[ "$SEMVER_MAJOR_MINOR_PATCH" != "0.0.0" ]]; then
+        IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$SEMVER_MAJOR_MINOR_PATCH"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+
     # add tag for reference if available using normalization
+    # - dont add tag if semver tags were added
     # - attempt to build tag first
     # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
     - |
+      echo "TAG_REF_NORMALIZED_ENABLE=$TAG_REF_NORMALIZED_ENABLE"
       if [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
         REF_TAG_NORMALIZED=$(echo $DRONE_TAG | sed s:/:-:g)
         IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
@@ -45,7 +68,8 @@
         REF_TAG_NORMALIZED=$(echo $DRONE_BRANCH | sed s:/:-:g)
         IMAGE_DESTS="$IMAGE_DESTS --destination $CI_REGISTRY_IMAGE:$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
       fi
-    
+
+    # prepare kaniko args
     - |
       if [[ -z "$KANIKO_ARGS" ]]; then
         KANIKO_ARGS=""
