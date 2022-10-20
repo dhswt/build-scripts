@@ -65,7 +65,7 @@
     # default tag based on commit
     - |
       if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then
-        helm cm-push . "$HELM_REPO_NAME" --version=$TAG_COMMIT_BASE_VERSION-$IMAGE_COMMIT_PREFIX-$CI_COMMIT_SHA
+        helm cm-push . "$HELM_REPO_NAME" --version=$TAG_COMMIT_BASE_VERSION-$IMAGE_COMMIT_PREFIX$CI_COMMIT_SHA
       fi
 
     # add tag for reference if available
