@@ -18,7 +18,9 @@
       mv $COMPOSER_PACKAGE_DIR/composer.json.tmp $COMPOSER_PACKAGE_DIR/composer.json
 
     # create zip
-    - zip -r $COMPOSER_PACKAGE_FILE $COMPOSER_PACKAGE_DIR
+    - |
+      cd $COMPOSER_PACKAGE_DIR
+      zip -r $COMPOSER_PACKAGE_FILE .
     
     # prepare upload helper function
     - |
