@@ -20,8 +20,8 @@
   commands:
     # drone does not support expanding vars in environment values, set defaults via bash
     - |
-      export CONTEXT_DIR="${CONTEXT_DIR:-$DRONE_WORKSPACE_BASE}"
-      export DOCKERFILE="${DOCKERFILE:-$DRONE_WORKSPACE_BASE/Dockerfile}"
+      if [[ -z "$CONTEXT_DIR" ]]; then CONTEXT_DIR="$DRONE_WORKSPACE_BASE"; fi
+      if [[ -z "$DOCKERFILE" ]]; then DOCKERFILE="$DRONE_WORKSPACE_BASE/Dockerfile"; fi
 
     # add gitlab registry auth
     - |
