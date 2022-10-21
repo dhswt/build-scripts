@@ -3,8 +3,9 @@
   image: composer:2
   
   environment:
-    VERSION_COMMIT_ENABLE: "true"
-    VERSION_REF_NORMALIZED_ENABLE: "true"
+    VERSION_COMMIT_ENABLE: "false"
+    VERSION_BRANCH_ENABLE: "false"
+    VERSION_TAG_ENABLE: "true"
 
   commands:
     # drone does not support expanding vars in environment values, set defaults via bash
@@ -39,10 +40,10 @@
     # - attempt to build tag first
     # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
     - |
-      if [[ "$VERSION_REF_NORMALIZED_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
+      if [[ "$VERSION_TAG_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
         REF_TAG_NORMALIZED=$(echo $DRONE_TAG | sed s:/:-:g | sed -e "s/^v//")
         upload_composer_package "$REF_TAG_NORMALIZED"
-      elif [[ "$VERSION_REF_NORMALIZED_ENABLE" == "true" ]] && [[ -z "$DRONE_PULL_REQUEST" ]] && [[ ! -z $DRONE_BRANCH ]]; then
+      elif [[ "$VERSION_BRANCH_ENABLE" == "true" ]] && [[ -z "$DRONE_PULL_REQUEST" ]] && [[ ! -z $DRONE_BRANCH ]]; then
         REF_TAG_NORMALIZED=$(echo $DRONE_BRANCH | sed s:/:-:g)
         upload_composer_package "dev-$REF_TAG_NORMALIZED"
 
