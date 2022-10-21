@@ -5,6 +5,8 @@
   environment:
     VERSION_COMMIT_ENABLE: "true"
     VERSION_REF_NORMALIZED_ENABLE: "true"
+    EXCLUDE_GIT_DIR: "true"
+    ZIP_EXTRA_ARGS: ""
   commands:
     # drone does not support expanding vars in environment values, set defaults via bash
     - if [[ -z "$COMPOSER_PACKAGE_DIR" ]]; then COMPOSER_PACKAGE_DIR=$DRONE_WORKSPACE_BASE; fi
@@ -19,7 +21,10 @@
     # create zip
     - |
       cd $COMPOSER_PACKAGE_DIR
-      zip -r $COMPOSER_PACKAGE_FILE .
+      if [[ "$EXCLUDE_GIT_DIR" == "true" ]]; then
+        ZIP_EXTRA_ARGS="$ZIP_EXTRA_ARGS -x '*.git*'"
+      fi
+      zip -r $ZIP_EXTRA_ARGS $COMPOSER_PACKAGE_FILE .
     
     # prepare upload helper function
     - |
