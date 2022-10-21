@@ -44,10 +44,10 @@
         upload_composer_package "$REF_TAG_NORMALIZED"
       elif [[ "$VERSION_REF_NORMALIZED_ENABLE" == "true" ]] && [[ -z "$DRONE_PULL_REQUEST" ]] && [[ ! -z $DRONE_BRANCH ]]; then
         REF_TAG_NORMALIZED=$(echo $DRONE_BRANCH | sed s:/:-:g)
-        upload_composer_package "0.0.0-dev-$REF_TAG_NORMALIZED"
+        upload_composer_package "dev-$REF_TAG_NORMALIZED"
 
         # version based on commit
         if [[ "$VERSION_COMMIT_ENABLE" == "true" ]]; then
-          upload_composer_package "0.0.0-dev-$REF_TAG_NORMALIZED-commit-$CI_COMMIT_SHA"
+          upload_composer_package "dev-commit-$CI_COMMIT_SHA"
         fi
       fi
