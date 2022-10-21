@@ -24,7 +24,7 @@
       if [[ "$EXCLUDE_GIT_DIR" == "true" ]]; then
         ZIP_EXTRA_ARGS="$ZIP_EXTRA_ARGS -x '*.git*'"
       fi
-      zip -r $ZIP_EXTRA_ARGS $COMPOSER_PACKAGE_FILE .
+      zip -r $COMPOSER_PACKAGE_FILE . $ZIP_EXTRA_ARGS 
     
     # prepare upload helper function
     - |
