@@ -5,6 +5,7 @@
   environment:
     VERSION_COMMIT_ENABLE: "true"
     VERSION_REF_NORMALIZED_ENABLE: "true"
+
   commands:
     # drone does not support expanding vars in environment values, set defaults via bash
     - if [[ -z "$COMPOSER_PACKAGE_DIR" ]]; then COMPOSER_PACKAGE_DIR=$DRONE_WORKSPACE_BASE; fi
@@ -20,8 +21,10 @@
     - |
       cd $COMPOSER_PACKAGE_DIR
       zip -r $COMPOSER_PACKAGE_FILE . \
-        -x '*.git/*'"
+        -x '*.git/*'
     
+    # TODO handle package already exists
+    # TODO report errors and fail job
     # prepare upload helper function
     - |
       function upload_composer_package() {
