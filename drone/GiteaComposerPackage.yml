@@ -8,8 +8,7 @@
   commands:
     # drone does not support expanding vars in environment values, set defaults via bash
     - if [[ -z "$COMPOSER_PACKAGE_DIR" ]]; then COMPOSER_PACKAGE_DIR=$DRONE_WORKSPACE_BASE; fi
-    - TEMP_DIR=$(mktemp -d)
-    - COMPOSER_PACKAGE_FILE=$TEMP_DIR/package.zip
+    - COMPOSER_PACKAGE_FILE=$COMPOSER_PACKAGE_DIR/package.zip
 
     # unset ".version" in composer.json as it interfers with setting version via GET param ?version=
     - |
