@@ -7,27 +7,26 @@
     VERSION_BRANCH_ENABLE: "false"
     VERSION_TAG_ENABLE: "true"
 
-  commands:
-    # drone does not support expanding vars in environment values, set defaults via bash
-    - if [[ -z "$COMPOSER_PACKAGE_DIR" ]]; then COMPOSER_PACKAGE_DIR=$DRONE_WORKSPACE_BASE; fi
-    - COMPOSER_PACKAGE_FILE=$COMPOSER_PACKAGE_DIR/package.zip
+  commands: 
+    - &GiteaComposerPackageCommands |
+      # drone does not support expanding vars in environment values, set defaults via bash
+      if [[ -z "$COMPOSER_PACKAGE_DIR" ]]; then COMPOSER_PACKAGE_DIR=$DRONE_WORKSPACE_BASE; fi
+      COMPOSER_PACKAGE_DIR=$(realpath $COMPOSER_PACKAGE_DIR)
+      COMPOSER_PACKAGE_FILE=$COMPOSER_PACKAGE_DIR/package.zip
 
-    # unset ".version" in composer.json as it interfers with setting version via GET param ?version=
-    - |
+      # unset ".version" in composer.json as it interfers with setting version via GET param ?version=
       apk add --no-cache jq
       jq 'del(.version)' $COMPOSER_PACKAGE_DIR/composer.json > $COMPOSER_PACKAGE_DIR/composer.json.tmp
       mv $COMPOSER_PACKAGE_DIR/composer.json.tmp $COMPOSER_PACKAGE_DIR/composer.json
 
-    # create zip
-    - |
+      # create zip
       cd $COMPOSER_PACKAGE_DIR
       zip -r $COMPOSER_PACKAGE_FILE . \
         -x '*.git/*'
-    
-    # TODO handle package already exists
-    # TODO report errors and fail job
-    # prepare upload helper function
-    - |
+
+      # TODO handle package already exists
+      # TODO report errors and fail job
+      # prepare upload helper function
       function upload_composer_package() {
         VERSION=$1
         echo "# uploading package to $GITEA_PACKAGES_API/$CI_PROJECT_NAMESPACE/composer?version=$VERSION"
@@ -36,10 +35,9 @@
           $GITEA_PACKAGES_API/$CI_PROJECT_NAMESPACE/composer?version=$VERSION
       }
 
-    # add tag for reference if available using normalization
-    # - attempt to build tag first
-    # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
-    - |
+      # add tag for reference if available using normalization
+      # - attempt to build tag first
+      # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
       if [[ "$VERSION_TAG_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
         REF_TAG_NORMALIZED=$(echo $DRONE_TAG | sed s:/:-:g | sed -e "s/^v//")
         upload_composer_package "$REF_TAG_NORMALIZED"
