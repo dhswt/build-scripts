@@ -19,7 +19,8 @@
     ADDITIONAL_REGISTRIES: ""
     ADD_CI_REGISTRY_AUTH: "true"
     ADD_CI_REGISTRY_TARGET: "true"
-    ADDTIONAL_REGISTRY_AUTH_JSON: ""
+    REGISTRY_AUTH_JSON: ""
+    MERGE_REGISTRY_JSON: "true"
 
   commands:
     - &ContainerImageKanikoCommands |
@@ -50,20 +51,18 @@
 
       # add gitlab registry auth
       if [[ "$ADD_CI_REGISTRY_AUTH" == "true" ]]; then
-        GITEA_REGISTRY_AUTH_JSON="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}"
+        REGISTRY_AUTH_JSON="$REGISTRY_AUTH_JSON {\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}"
       fi
 
       # merge registry auth
-      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]] || [[ ! -z "$GITEA_REGISTRY_AUTH_JSON" ]]; then
-        ADDITIONAL_REGISTRY_AUTH_JSON=$(echo "$ADDITIONAL_REGISTRY_AUTH_JSON $GITEA_REGISTRY_AUTH_JSON" | \
-          jq --slurp 'reduce .[] as $item ({}; . * $item)'
-        )
+      if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]] then
+        REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | jq --slurp 'reduce .[] as $item ({}; . * $item)')
       fi
 
       # create registry auth file
-      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]]; then
+      if [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
         mkdir -p /kaniko/.docker
-        echo "$ADDITIONAL_REGISTRY_AUTH_JSON" > /kaniko/.docker/config.json
+        echo "$REGISTRY_AUTH_JSON" > /kaniko/.docker/config.json
       ]]
 
       IMAGE_TAGS=""
