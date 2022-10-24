@@ -55,7 +55,7 @@
       fi
 
       # create merged auth file
-      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]] || [[ ! -z "$GITEA_REGISTRY_AUTH_JSON ]]; then
+      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]] || [[ ! -z "$GITEA_REGISTRY_AUTH_JSON" ]]; then
         mkdir -p /kaniko/.docker
         echo "$ADDITIONAL_REGISTRY_AUTH_JSON $GITEA_REGISTRY_AUTH_JSON" | \
           jq --slurp 'reduce .[] as $item ({}; . * $item)' \
