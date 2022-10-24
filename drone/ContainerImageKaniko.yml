@@ -63,7 +63,7 @@
       if [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
         mkdir -p /kaniko/.docker
         echo "$REGISTRY_AUTH_JSON" > /kaniko/.docker/config.json
-      ]]
+      fi
 
       IMAGE_TAGS=""
 
