@@ -1,4 +1,3 @@
-
 .ContainerImageKaniko: &ContainerImageKaniko
   name: ContainerImageKaniko
   #image: gcr.io/kaniko-project/executor:debug
@@ -54,13 +53,18 @@
         GITEA_REGISTRY_AUTH_JSON="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}"
       fi
 
-      # create merged auth file
+      # merge registry auth
       if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]] || [[ ! -z "$GITEA_REGISTRY_AUTH_JSON" ]]; then
-        mkdir -p /kaniko/.docker
-        echo "$ADDITIONAL_REGISTRY_AUTH_JSON $GITEA_REGISTRY_AUTH_JSON" | \
-          jq --slurp 'reduce .[] as $item ({}; . * $item)' \
-          > /kaniko/.docker/config.json
+        ADDITIONAL_REGISTRY_AUTH_JSON=$(echo "$ADDITIONAL_REGISTRY_AUTH_JSON $GITEA_REGISTRY_AUTH_JSON" | \
+          jq --slurp 'reduce .[] as $item ({}; . * $item)'
+        )
       fi
+
+      # create registry auth file
+      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]]; then
+        mkdir -p /kaniko/.docker
+        echo "$ADDITIONAL_REGISTRY_AUTH_JSON" > /kaniko/.docker/config.json
+      ]]
 
       IMAGE_TAGS=""
 
@@ -138,3 +142,4 @@
       ALL_ARGS="$KANIKO_ARGS $IMAGE_DESTS $ADDITIONAL_REGISTRY_DESTINATIONS"
       echo "$ALL_ARGS"
       echo $ALL_ARGS | xargs /kaniko/executor
+
