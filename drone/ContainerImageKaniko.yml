@@ -1,8 +1,9 @@
 
 .ContainerImageKaniko: &ContainerImageKaniko
   name: ContainerImageKaniko
-  image: gcr.io/kaniko-project/executor:debug
-  
+  #image: gcr.io/kaniko-project/executor:debug
+  image: gitea.dhswt.de/dhswt/kaniko:master
+
   environment:
     KANIKO_ARGS: ""
     TAG_PREFIX: ""
@@ -19,11 +20,11 @@
     ADDITIONAL_REGISTRIES: ""
     ADD_CI_REGISTRY_AUTH: "true"
     ADD_CI_REGISTRY_TARGET: "true"
+    ADDTIONAL_REGISTRY_AUTH_JSON: ""
 
   commands:
     - &ContainerImageKanikoCommands |
 
-    
       _OLD_IFS="$IFS"
       REGISTRY_TARGETS=""
 
@@ -50,8 +51,15 @@
 
       # add gitlab registry auth
       if [[ "$ADD_CI_REGISTRY_AUTH" == "true" ]]; then
+        GITEA_REGISTRY_AUTH_JSON="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}"
+      fi
+
+      # create merged auth file
+      if [[ ! -z "$ADDITIONAL_REGISTRY_AUTH_JSON" ]] || [[ ! -z "$GITEA_REGISTRY_AUTH_JSON ]]; then
         mkdir -p /kaniko/.docker
-        echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}" > /kaniko/.docker/config.json
+        echo "$ADDITIONAL_REGISTRY_AUTH_JSON $GITEA_REGISTRY_AUTH_JSON" | \
+          jq --slurp 'reduce .[] as $item ({}; . * $item)' \
+          > /kaniko/.docker/config.json
       fi
 
       IMAGE_TAGS=""
