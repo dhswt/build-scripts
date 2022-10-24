@@ -55,7 +55,7 @@
       fi
 
       # merge registry auth
-      if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]] then
+      if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
         REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | jq --slurp 'reduce .[] as $item ({}; . * $item)')
       fi
 
