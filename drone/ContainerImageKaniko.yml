@@ -1,7 +1,7 @@
 .ContainerImageKaniko: &ContainerImageKaniko
   name: ContainerImageKaniko
-  image: gcr.io/kaniko-project/executor:debug
-  #image: gitea.dhswt.de/dhswt/kaniko:master
+  # image: gcr.io/kaniko-project/executor:debug
+  image: gitea.dhswt.de/dhswt/kaniko:master
 
   environment:
     KANIKO_ARGS: ""
@@ -73,10 +73,8 @@
 
       # merge registry auth
       if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
-        wget -O /bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-        chmod +x /bin/jq
         debug_log "merging $REGISTRY_AUTH_JSON"
-        REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | /bin/jq --slurp 'reduce .[] as $item ({}; . * $item)')
+        REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | jq --slurp 'reduce .[] as $item ({}; . * $item)')
         debug_log "merged $REGISTRY_AUTH_JSON"
       fi
 
