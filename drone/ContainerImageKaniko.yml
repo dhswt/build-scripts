@@ -15,7 +15,7 @@
     TAG_SEMVER_MINOR: "true"
     TAG_SEMVER_PATCH: "true"
     ADDITIONAL_REGISTRY_DESTINATIONS: "" #  a list of --destination registry/orga/repo:tag strings, space separated"
-    KANIKO_SINGLE_SNAPSHOT: "true"
+    SQUASH_LAYERS: "true"
     ADDITIONAL_REGISTRIES: ""
     ADD_CI_REGISTRY_AUTH: "true"
     ADD_CI_REGISTRY_TARGET: "true"
@@ -75,9 +75,9 @@
       if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
         wget -O /bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
         chmod +x /bin/jq
-        echo "merging $REGISTRY_AUTH_JSON"
+        debug_log "merging $REGISTRY_AUTH_JSON"
         REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | /bin/jq --slurp 'reduce .[] as $item ({}; . * $item)')
-        echo "merged $REGISTRY_AUTH_JSON"
+        debug_log "merged $REGISTRY_AUTH_JSON"
       fi
 
       # create registry auth file
@@ -149,7 +149,7 @@
       fi
       KANIKO_ARGS="--context $CONTEXT_DIR --dockerfile $DOCKERFILE $KANIKO_ARGS"
 
-      if [[ "$KANIKO_SINGLE_SNAPSHOT" == "true" ]]; then
+      if [[ "$SQUASH_LAYERS" == "true" ]]; then
         KANIKO_ARGS="$KANIKO_ARGS --single-snapshot"
       fi
       if [[ -z "$IMAGE_DESTS" ]]; then
