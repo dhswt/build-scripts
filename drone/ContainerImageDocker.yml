@@ -1,0 +1,212 @@
+.ContainerImageDockerDinDService: &ContainerImageDockerDinDService
+  name: ContainerImageDockerDinDService
+  image: docker:dind
+  privileged: true
+  volumes:
+  - name: dockersock
+    path: /var/run
+  commands:
+  - dockerd-entrypoint.sh --experimental
+
+.ContainerImageDockerVolume: &ContainerImageDockerVolume
+  name: dockersock
+  temp: {}
+
+.ContainerImageDocker: &ContainerImageDocker
+  name: ContainerImageDocker
+  image: docker:latest
+
+  volumes:
+  - name: dockersock
+    path: /var/run
+
+  environment:
+    DOCKER_ARGS: ""
+    TAG_PREFIX: ""
+    TAG_SUFFIX: ""
+    TAG_COMMIT_ENABLE: "true"
+    TAG_COMMIT_PREFIX: "commit-"
+    TAG_REF_SLUG_ENABLE: "false"
+    TAG_REF_NORMALIZED_ENABLE: "true"
+    TAG_SEMVER_MAJOR: "true"
+    TAG_SEMVER_MINOR: "true"
+    TAG_SEMVER_PATCH: "true"
+    ADDITIONAL_REGISTRY_DESTINATIONS: "" #  a list of --destination registry/orga/repo:tag strings, space separated"
+    SQUASH_LAYERS: "true"
+    ADDITIONAL_REGISTRIES: ""
+    ADD_CI_REGISTRY_AUTH: "true"
+    ADD_CI_REGISTRY_TARGET: "true"
+    REGISTRY_AUTH_JSON: ""
+    MERGE_REGISTRY_JSON: "true"
+    DEBUG_STEP: "false"
+    PUSH_TAGS: "true"
+    DOCKER_WAIT_START_SECONDS: "5"
+
+  commands:
+    - &ContainerImageDockerCommands |
+
+      _OLD_IFS="$IFS"
+      REGISTRY_TARGETS=""
+
+      if [[ "$DEBUG_STEP" == "true" ]]; then
+        echo "[debug] env at start"
+        env
+      fi
+
+      debug_log() {
+        if [[ "$DEBUG_STEP" == "true" ]]; then
+          echo "[debug] $@"
+        fi
+      }
+
+      # add default registry as target
+      if [[ "$ADD_CI_REGISTRY_TARGET" == "true" ]]; then
+        REGISTRY_TARGETS="$CI_REGISTRY_IMAGE:"
+      fi
+
+      # prepare additional registry targets
+      IFS=","
+      for REGISTRY in $ADDITIONAL_REGISTRIES; do
+        # add ":" to registry paths missing it
+        if [[ "$REGISTRY" != *":"* ]]; then
+          REGISTRY="$REGISTRY:"
+        fi
+
+        debug_log "adding $REGISTRY to REGISTRY_TARGETS"
+
+        REGISTRY_TARGETS="$REGISTRY_TARGETS,$REGISTRY"
+      done
+      IFS="$OLD_IFS"
+
+      # drone does not support expanding vars in environment values, set defaults via bash
+      if [[ -z "$CONTEXT_DIR" ]]; then CONTEXT_DIR="$DRONE_WORKSPACE_BASE"; fi
+      if [[ -z "$DOCKERFILE" ]]; then DOCKERFILE="$DRONE_WORKSPACE_BASE/Dockerfile"; fi
+
+      debug_log "CONTEXT_DIR=$CONTEXT_DIR"
+      debug_log "DOCKERFILE=$DOCKERFILE"
+
+      # add gitlab registry auth
+      if [[ "$ADD_CI_REGISTRY_AUTH" == "true" ]]; then
+        REGISTRY_AUTH_JSON="$REGISTRY_AUTH_JSON {\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n token:$CI_REGISTRY_PASSWORD | base64)\"}}}"
+      fi
+
+      # merge registry auth
+      if [[ "$MERGE_REGISTRY_JSON" == "true" ]] && [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
+        apk add --no-cache jq
+        debug_log "merging $REGISTRY_AUTH_JSON"
+        REGISTRY_AUTH_JSON=$(echo "$REGISTRY_AUTH_JSON" | jq --slurp 'reduce .[] as $item ({}; . * $item)')
+        debug_log "merged $REGISTRY_AUTH_JSON"
+      fi
+
+      # create registry auth file
+      if [[ ! -z "$REGISTRY_AUTH_JSON" ]]; then
+        mkdir -p /root/.docker
+        echo "$REGISTRY_AUTH_JSON" > /root/.docker/config.json
+      fi
+
+      debug_log "REGISTRY_AUTH_JSON=$REGISTRY_AUTH_JSON"
+
+      IMAGE_TAGS=""
+
+      # default tag based on commit
+      if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then
+        debug_log "adding commit tag"
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$TAG_COMMIT_PREFIX$CI_COMMIT_SHA$TAG_SUFFIX"
+      fi
+
+      # add semver major tag              if enabled and available, exclude "0"     tag
+      # add semver major.minor tag        if enabled and available, exclude "0.0"   tag
+      # add semver major.minor.patch tag  if enabled and available, exclude "0.0.0" tag
+      if [[ "$TAG_SEMVER_MAJOR" == "true" ]] && [[ ! -z $SEMVER_MAJOR ]] && [[ "$SEMVER_MAJOR" != "0" ]]; then
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$SEMVER_MAJOR"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+      if [[ "$TAG_SEMVER_MINOR" == "true" ]] && [[ ! -z $SEMVER_MINOR ]] && [[ "$SEMVER_MAJOR_MINOR" != "0.0" ]]; then
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$SEMVER_MAJOR_MINOR"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+      if [[ "$TAG_SEMVER_PATCH" == "true" ]] && [[ ! -z $SEMVER_PATCH ]] && [[ "$SEMVER_MAJOR_MINOR_PATCH" != "0.0.0" ]]; then
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$SEMVER_MAJOR_MINOR_PATCH"
+        TAG_REF_NORMALIZED_ENABLE=0
+      fi
+
+      # add tag for reference if available using normalization
+      # - dont add tag if semver tags were added
+      # - attempt to build tag first
+      # - attempt to build branch if not a PR (if not PR for extra security, variable description on drone unclear)
+      echo "TAG_REF_NORMALIZED_ENABLE=$TAG_REF_NORMALIZED_ENABLE"
+      if [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ ! -z $DRONE_TAG ]]; then
+        echo "adding tag for tag"
+        REF_TAG_NORMALIZED=$(echo $DRONE_TAG | sed s:/:-:g)
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
+      elif [[ "$TAG_REF_NORMALIZED_ENABLE" == "true" ]] && [[ -z "$DRONE_PULL_REQUEST" ]] && [[ ! -z $DRONE_BRANCH ]]; then
+        echo "adding tag for branch"
+        REF_TAG_NORMALIZED=$(echo $DRONE_BRANCH | sed s:/:-:g)
+        IMAGE_TAGS="$IMAGE_TAGS,$TAG_PREFIX$REF_TAG_NORMALIZED$TAG_SUFFIX"
+      fi
+
+      # prepare destinations by combining registries + tags
+      echo "# preparing destinations:"
+      IMAGE_DESTS=""
+      IMAGE_DESTS_PUSH=""
+      IFS=","
+      for REGISTRY in $REGISTRY_TARGETS; do
+        if [[ -z "$REGISTRY" ]]; then continue; fi
+
+        for IMAGE_TAG in $IMAGE_TAGS; do
+          if [[ -z "$IMAGE_TAG" ]]; then continue; fi
+          echo "- $REGISTRY$IMAGE_TAG"
+          IMAGE_DESTS="$IMAGE_DESTS --tag $REGISTRY$IMAGE_TAG"
+          IMAGE_DESTS_PUSH="$IMAGE_DESTS_PUSH $REGISTRY$IMAGE_TAG"
+        done
+      done
+      IMAGE_DESTS=$(echo $IMAGE_DESTS | xargs)
+      IMAGE_DESTS_PUSH=$(echo $IMAGE_DESTS_PUSH | xargs)
+      IFS="$OLD_IFS"
+
+      # prepare docker build args
+      if [[ -z "$DOCKER_ARGS" ]]; then
+        DOCKER_ARGS=""
+      fi
+      DOCKER_ARGS="$CONTEXT_DIR --file $DOCKERFILE $DOCKER_ARGS"
+
+      if [[ "$SQUASH_LAYERS" == "true" ]]; then
+        DOCKER_ARGS="$DOCKER_ARGS --squash"
+      fi
+      if [[ -z "$IMAGE_DESTS" ]]; then
+        DOCKER_ARGS="$DOCKER_ARGS $IMAGE_DESTS"
+      fi
+      if [[ -z "$ADDITIONAL_REGISTRY_DESTINATIONS" ]]; then
+        DOCKER_ARGS="$DOCKER_ARGS $ADDITIONAL_REGISTRY_DESTINATIONS"
+      fi
+
+      # build image
+      echo "# docker arguments: "
+      ALL_ARGS="$DOCKER_ARGS $IMAGE_DESTS $ADDITIONAL_REGISTRY_DESTINATIONS"
+      echo "$ALL_ARGS"
+
+      if [[ "$DEBUG_STEP" == "true" ]]; then
+        echo "[debug] env before call to docker build"
+        env
+      fi
+
+      # give docker enough time to start
+      sleep $DOCKER_WAIT_START_SECONDS
+
+      # start build
+      echo $ALL_ARGS | xargs docker build
+
+      # push tags
+      if [[ "$PUSH_TAGS" == "true" ]]; then
+        IFS=" "
+        echo "IMAGE_DESTS_PUSH=$IMAGE_DESTS_PUSH"
+        for TAG in $IMAGE_DESTS_PUSH; do
+          if [[ -z "$TAG" ]]; then
+            continue;
+          fi
+
+          echo "# pushing $TAG"
+          docker push $TAG
+        done
+        IFS="$OLD_IFS"
+      fi
