@@ -1,0 +1,61 @@
+def addGiteaRepository(RepositoryHandler handler, String giteaApiUrl, String organization, String token = null) {
+    handler.maven {
+        name "gitea-$organization"
+        url = "${giteaApiUrl}/api/packages/${organization}/maven"
+        setGiteaRepoAuth(it, token)
+    }
+}
+
+def addGiteaPublishingRepository(RepositoryHandler handler, String giteaApiUrl, String organization, String token = null) {
+    handler.maven {
+        name "gitea-$organization"
+        url = "${giteaApiUrl}/api/packages/${organization}/maven"
+        setGiteaRepoAuth(it, token)
+    }
+}
+
+/**
+ * Add auth to repo, attempt to find token by first non-null:
+ * - function argument "token"
+ * - env var: CI_JOB_TOKEN
+ * - env var: CI_REGISTRY_PASSWORD
+ * - gradle project var: giteaPrivateToken
+ * Throws exception if no auth token was found.
+ */
+def setGiteaRepoAuth(MavenArtifactRepository maven, String token = null) {
+
+    if (token != null) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Authorization'
+            value = "token " + System.getenv("CI_JOB_TOKEN")
+        }
+    } else if (System.getenv("CI_JOB_TOKEN") != null) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Authorization'
+            value = "token " + System.getenv("CI_JOB_TOKEN")
+        }
+    } else if (System.getenv("CI_REGISTRY_PASSWORD") != null) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Authorization'
+            value = "token " + System.getenv("CI_REGISTRY_PASSWORD")
+        }
+    } else if (project.hasProperty("giteaPrivateToken")) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Authorization'
+            value = "token " + giteaPrivateToken
+        }
+    } else {
+        throw Exception("No gitea repository auth configured")
+    }
+
+    maven.authentication {
+        header(HttpHeaderAuthentication)
+    }
+}
+
+// Export methods by turning them into closures
+ext {
+    setGiteaRepoAuth = this.&setGiteaRepoAuth
+    addGiteaRepository = this.&addGiteaRepository
+    addGiteaPublishingRepository = this.&addGiteaPublishingRepository
+}
