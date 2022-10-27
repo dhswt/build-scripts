@@ -20,7 +20,7 @@ def setGitlabRepoAuth(MavenArtifactRepository maven) {
             name = 'Job-Token'
             value = System.getenv("CI_JOB_TOKEN")
         }
-    } else if (gitlabPrivateToken != null) {
+    } else if (project.hasProperty("gitlabPrivateToken")) {
         maven.credentials(HttpHeaderCredentials) {
             name = 'Private-Token'
             value = gitlabPrivateToken
