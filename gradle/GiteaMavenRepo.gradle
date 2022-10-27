@@ -17,6 +17,7 @@ def addGiteaPublishingRepository(RepositoryHandler handler, String giteaApiUrl, 
 /**
  * Add auth to repo, attempt to find token by first non-null:
  * - function argument "token"
+ * - env var: GITEA_BUILD_TOKEN
  * - env var: CI_JOB_TOKEN
  * - env var: CI_REGISTRY_PASSWORD
  * - gradle project var: giteaPrivateToken
@@ -27,7 +28,12 @@ def setGiteaRepoAuth(MavenArtifactRepository maven, String token = null) {
     if (token != null) {
         maven.credentials(HttpHeaderCredentials) {
             name = 'Authorization'
-            value = "token " + System.getenv("CI_JOB_TOKEN")
+            value = "token " + token
+        }
+    } else if (System.getenv("GITEA_BUILD_TOKEN") != null) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Authorization'
+            value = "token " + System.getenv("GITEA_BUILD_TOKEN")
         }
     } else if (System.getenv("CI_JOB_TOKEN") != null) {
         maven.credentials(HttpHeaderCredentials) {
