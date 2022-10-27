@@ -25,8 +25,13 @@ def setGitlabRepoAuth(MavenArtifactRepository maven) {
             name = 'Private-Token'
             value = gitlabPrivateToken
         }
-
-    } else {
+    } else if (System.getenv("GITLAB_PRIVATE_TOKEN") != null) {
+        maven.credentials(HttpHeaderCredentials) {
+            name = 'Private-Token'
+            value = System.getenv("GITLAB_PRIVATE_TOKEN")
+        }
+    }
+    else {
         throw Exception("No gitlab maven repository auth configured")
     }
 
