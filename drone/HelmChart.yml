@@ -22,6 +22,7 @@
 
     CHART_PATH: "./chart"
 
+    TAG_CHART_VERSION_ENABLE: "false"
     TAG_COMMIT_ENABLE: "true"
     TAG_COMMIT_BASE_VERSION: "0.0.0"
     TAG_COMMIT_PREFIX: "commit-"
@@ -61,7 +62,15 @@
       if [[ "$GITLAB_HELM_REPO_AUTH" == "true" ]]; then
         helm repo add --username="${CI_REGISTRY_USER}" --password="${CI_REGISTRY_PASSWORD}" "$HELM_REPO_NAME" $HELM_STABLE_ENDPOINT
       fi
-    
+
+    # tag based on chart version, install jq first
+    - |
+      if [[ "$TAG_CHART_VERSION_ENABLE" == "true" ]]; then
+        apk add jq
+        CHART_VERSION=$(cat Chart.yaml | yq .version)
+        helm cm-push . "$HELM_REPO_NAME" --version=$CHART_VERSION
+      fi
+
     # default tag based on commit
     - |
       if [[ "$TAG_COMMIT_ENABLE" == "true" ]]; then

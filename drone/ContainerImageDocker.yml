@@ -40,6 +40,7 @@
     MERGE_REGISTRY_JSON: "true"
     DEBUG_STEP: "false"
     PUSH_TAGS: "true"
+    DOCKER_BUILDKIT: 1
 
   commands:
     - &ContainerImageDockerCommands |
