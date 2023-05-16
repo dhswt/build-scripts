@@ -1,3 +1,24 @@
+/**
+ * Configure default publishing with sources+javadoc. Copy to project to customize, this mostly serves as an example.
+ */
+def configureDefaultPublishing(Project project) {
+    project.java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    project.publishing {
+        repositories {
+            addGiteaPublishingRepository(it, giteaUrl, giteaRepoNamespace)
+        }
+        publications {
+            maven(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
 def addGiteaRepository(RepositoryHandler handler, String giteaApiUrl, String organization, String token = null) {
     handler.maven {
         name "gitea-$organization"
@@ -64,4 +85,5 @@ ext {
     setGiteaRepoAuth = this.&setGiteaRepoAuth
     addGiteaRepository = this.&addGiteaRepository
     addGiteaPublishingRepository = this.&addGiteaPublishingRepository
+    configureDefaultPublishing = this.&configureDefaultPublishing
 }
