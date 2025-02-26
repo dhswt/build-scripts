@@ -21,7 +21,7 @@ def configureDefaultPublishing(Project project) {
 
 def addGiteaRepository(RepositoryHandler handler, String giteaApiUrl, String organization, String token = null) {
     handler.maven {
-        name "gitea-$organization"
+        name = "gitea-$organization"
         url = "${giteaApiUrl}/api/packages/${organization}/maven"
         setGiteaRepoAuth(it, token)
     }
@@ -29,7 +29,7 @@ def addGiteaRepository(RepositoryHandler handler, String giteaApiUrl, String org
 
 def addGiteaPublishingRepository(RepositoryHandler handler, String giteaApiUrl, String organization, String token = null) {
     handler.maven {
-        name "gitea-$organization"
+        name = "gitea-$organization"
         url = "${giteaApiUrl}/api/packages/${organization}/maven"
         setGiteaRepoAuth(it, token)
     }

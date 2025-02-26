@@ -1,6 +1,6 @@
 def addGitlabGroupRepository(RepositoryHandler handler, String groupName, String groupId) {
     handler.maven {
-        name "Gitlab Group - $groupName"
+        name = "Gitlab Group - $groupName"
         url = "${gitlabCiApiUrl}/groups/${groupId}/-/packages/maven"
         setGitlabRepoAuth(it)
     }
