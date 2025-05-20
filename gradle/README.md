@@ -1,32 +1,32 @@
 # Build Scripts > Gradle
 
-## Gitlab Maven Repo
+## Gitea Maven Repo
 
 ```gradle
 // configure ids
 buildscript {
     ext {
-        gitlabCiApiUrl = System.getenv("CI_API_V4_URL") ?: "https://gitlab.com/api/v4"
-        gitlabCiProjectId = System.getenv("CI_PROJECT_ID") ?: "TODO add project id for building outside CI here"
+        giteaUrl = System.getenv("GITEA_URL") ?: "https://gitea.dhswt.de"
+        giteaRepoNamespace = System.getenv("CI_REPOSITORY_NAMESPACE") ?: "TODO add project id for building outside CI here"
     }
 }
 
 // add script
-apply from: 'https://raw.githubusercontent.com/dhswt/build-scripts/master/gradle/GitlabMavenRepo.gradle'
+apply from: 'https://gitea.dhswt.de/actions/build-scripts/raw/branch/master/gradle/GiteaMavenRepo.gradle'
 
-// configure a gitlab as a source
+// configure a gitea namespace as repository
 project {
     repositories {
         mavenCentral()
         mavenLocal()
-        addGitlabGroupRepository(it, "<GROUP_NAME>", "<GROUP_ID>")
+        // addGiteaRepository(it, giteaUrl, "<namespace>")
     }
 }
 
-// publish to gitlab
+// publish to gitea
 publishing {
     repositories {
-        addGitlabPublishingRepository(it)
+        addGiteaPublishingRepository(it, giteaUrl, giteaRepoNamespace)
     }
     publications {
         maven(MavenPublication) {
