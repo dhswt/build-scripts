@@ -1,0 +1,82 @@
+buildscript {
+    ext {
+        javaVersion = "23" // language version
+        jdkVersion = "23" // toolchain jdk version
+        kotlinVersion = "2.1.20" // https://kotlinlang.org/docs/releases.html#release-details
+        gradlewVersion = "8.12.1" // https://gradle.org/releases/
+
+        giteaUrl = System.getenv("GITEA_URL") ?: "https://gitea.dhswt.de"
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+// configure defaults for gradle version
+wrapper {
+    gradleVersion = "$gradlewVersion"
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+// append jdk version to gradle properties for use by CI environments
+task writeCIGradleAndJdkVersionInfo(type: WriteProperties, group: "build setup") {
+    File ciPropsFile = new File(rootProject.projectDir, "gradle/ci.properties")
+    destinationFile = ciPropsFile
+
+    def props = new Properties()
+    if(ciPropsFile.exists()) {
+        ciPropsFile.withInputStream { props.load(it) }
+    }
+
+    props.setProperty("java_version", javaVersion)
+    props.setProperty("jdk_version", jdkVersion)
+    props.setProperty("kotlin_version", kotlinVersion)
+    props.setProperty("gradlew_version", gradlewVersion)
+    props.setProperty("gitea_url", giteaUrl)
+
+    properties(props)
+}
+
+// always run after wrapper task
+wrapper.finalizedBy writeCIGradleAndJdkVersionInfo
+
+// use more compact source set directories without nesting for simple or mono-language projects
+ext.useCompactKotlinSourceSets = { org.gradle.api.Project target ->
+    target.sourceSets {
+        main.java.srcDirs = []
+        main.resources.srcDirs = ['resources']
+        main.kotlin.srcDirs = ['src']
+        test.java.srcDirs = []
+        test.resources.srcDirs = ['resources', 'test-resources']
+        test.kotlin.srcDirs = ['test']
+    }
+}
+
+// configure defaults for java and jdk versions based on provided variables and enable intellij idea integration
+ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target -> 
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.valueOf("JVM_${javaVersion}"))
+        }
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of(jdkVersion))
+        }
+    }
+    java {
+        sourceCompatibility = JavaVersion.toVersion(javaVersion)
+        targetCompatibility = JavaVersion.toVersion(javaVersion)
+        withJavadocJar()
+        withSourcesJar()
+    }
+}
