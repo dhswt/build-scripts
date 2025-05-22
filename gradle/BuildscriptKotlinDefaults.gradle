@@ -10,6 +10,7 @@ buildscript {
 
     repositories {
         mavenCentral()
+        // gradlePluginPortal()
     }
 
     dependencies {
@@ -29,7 +30,7 @@ task writeCIGradleAndJdkVersionInfo(type: WriteProperties, group: "build setup")
     destinationFile = ciPropsFile
 
     def props = new Properties()
-    if(ciPropsFile.exists()) {
+    if (ciPropsFile.exists()) {
         ciPropsFile.withInputStream { props.load(it) }
     }
 
@@ -58,22 +59,28 @@ ext.useCompactKotlinSourceSets = { org.gradle.api.Project target ->
 }
 
 // configure defaults for java and jdk versions based on provided variables and enable intellij idea integration
-ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target -> 
-    idea {
+ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target ->
+    target.idea {
         module {
             downloadJavadoc = true
             downloadSources = true
         }
     }
-    kotlin {
+    target.kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.valueOf("JVM_${javaVersion}"))
+            // jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.valueOf("JVM_${javaVersion}"))
+            // workaround for mismatch classloader issues sometimes happening
+            var newValue = jvmTarget.get().class.getEnumConstants().find { it.target == "${javaVersion}" }
+            jvmTarget.set(newValue)
         }
         jvmToolchain {
-            languageVersion.set(JavaLanguageVersion.of(jdkVersion))
+            var newVersion = JavaLanguageVersion.of(jdkVersion)
+            if (newVersion != languageVersion.getOrNull()) {
+                languageVersion.set(JavaLanguageVersion.of(jdkVersion))
+            }
         }
     }
-    java {
+    target.java {
         sourceCompatibility = JavaVersion.toVersion(javaVersion)
         targetCompatibility = JavaVersion.toVersion(javaVersion)
         withJavadocJar()
