@@ -2,7 +2,7 @@ buildscript {
     ext {
         javaVersion = "23" // language version
         jdkVersion = "23" // toolchain jdk version
-        kotlinVersion = "2.1.20" // https://kotlinlang.org/docs/releases.html#release-details
+        kotlinVersion = "2.1.21" // https://kotlinlang.org/docs/releases.html#release-details
         gradlewVersion = "8.12.1" // https://gradle.org/releases/
 
         giteaUrl = System.getenv("GITEA_URL") ?: "https://gitea.dhswt.de"
