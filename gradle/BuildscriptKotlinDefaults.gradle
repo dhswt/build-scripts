@@ -38,11 +38,11 @@ task writeCIGradleAndJdkVersionInfo(type: WriteProperties, group: "build setup")
         ciPropsFile.withInputStream { props.load(it) }
     }
 
-    props.setProperty("java_version", javaVersion)
-    props.setProperty("jdk_version", jdkVersion)
-    props.setProperty("kotlin_version", kotlinVersion)
-    props.setProperty("gradlew_version", gradlewVersion)
-    props.setProperty("gitea_url", giteaUrl)
+    props.setProperty("java_version", ext.javaVersion)
+    props.setProperty("jdk_version", ext.jdkVersion)
+    props.setProperty("kotlin_version", ext.kotlinVersion)
+    props.setProperty("gradlew_version", ext.gradlewVersion)
+    props.setProperty("gitea_url", ext.giteaUrl)
 
     properties(props)
 }
