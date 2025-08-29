@@ -83,7 +83,6 @@ ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target ->
                 languageVersion.set(JavaLanguageVersion.of(jdkVersion))
             }
             */
-            languageVersion.set(JavaLanguageVersion.of(jdkVersion))
         }
     }
     target.java {
