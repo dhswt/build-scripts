@@ -77,10 +77,13 @@ ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target ->
             jvmTarget.set(newValue)
         }
         jvmToolchain {
+            /*
             var newVersion = JavaLanguageVersion.of(jdkVersion)
             if (newVersion != languageVersion.getOrNull()) {
                 languageVersion.set(JavaLanguageVersion.of(jdkVersion))
             }
+            */
+            languageVersion.set(JavaLanguageVersion.of(jdkVersion))
         }
     }
     target.java {
