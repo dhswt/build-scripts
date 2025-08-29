@@ -1,3 +1,4 @@
+/*
 buildscript {
     ext {
         javaVersion = "23" // language version
@@ -17,12 +18,15 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
+*/
 
 // configure defaults for gradle version
+/*
 wrapper {
     gradleVersion = "$gradlewVersion"
     distributionType = Wrapper.DistributionType.ALL
 }
+*/
 
 // append jdk version to gradle properties for use by CI environments
 task writeCIGradleAndJdkVersionInfo(type: WriteProperties, group: "build setup") {
@@ -44,7 +48,7 @@ task writeCIGradleAndJdkVersionInfo(type: WriteProperties, group: "build setup")
 }
 
 // always run after wrapper task
-wrapper.finalizedBy writeCIGradleAndJdkVersionInfo
+// wrapper.finalizedBy writeCIGradleAndJdkVersionInfo
 
 // use more compact source set directories without nesting for simple or mono-language projects
 ext.useCompactKotlinSourceSets = { org.gradle.api.Project target ->
@@ -59,6 +63,7 @@ ext.useCompactKotlinSourceSets = { org.gradle.api.Project target ->
 }
 
 // configure defaults for java and jdk versions based on provided variables and enable intellij idea integration
+/*
 ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target ->
     target.idea {
         module {
@@ -87,3 +92,4 @@ ext.configureDefaultsIdeaKotlinJava = { org.gradle.api.Project target ->
         withSourcesJar()
     }
 }
+*/
